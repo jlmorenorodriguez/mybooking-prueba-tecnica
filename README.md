@@ -21,6 +21,11 @@ COOKIE_SECRET="THE-COOKIE-SECRET"
 DATABASE_URL="mysql://user:password@host:port/prueba_tecnica?encoding=UTF-8-MB4"
 TEST_DATABASE_URL="mysql://user:password@host:port/prueba_tecnica_test?encoding=UTF-8-MB4"
 ```
+## Running with Docker
+For up the Dbs in docker
+```
+docker-compose up -d
+```
 
 ## Running the application
 

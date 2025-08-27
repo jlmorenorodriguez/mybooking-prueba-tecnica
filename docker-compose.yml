@@ -6,31 +6,33 @@ services:
     container_name: mybooking_mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword123
+      MYSQL_ROOT_PASSWORD: password
       MYSQL_DATABASE: prueba_tecnica
-      MYSQL_USER: mybooking
-      MYSQL_PASSWORD: password123
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
     ports:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./prueba_tecnica.sql:/docker-entrypoint-initdb.d/prueba_tecnica.sql
-    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+      - ./prueba_tecnica.sql:/docker-entrypoint-initdb.d/01-prueba_tecnica.sql
+      - ./init-user.sql:/docker-entrypoint-initdb.d/02-init-user.sql
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --bind-address=0.0.0.0
 
   mysql_test:
     image: mysql:8.0
     container_name: mybooking_mysql_test
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword123
+      MYSQL_ROOT_PASSWORD: password
       MYSQL_DATABASE: prueba_tecnica_test
-      MYSQL_USER: mybooking
-      MYSQL_PASSWORD: password123
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
     ports:
       - "3307:3306"
     volumes:
       - mysql_test_data:/var/lib/mysql
-    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+      - ./init-user.sql:/docker-entrypoint-initdb.d/init-user.sql
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --bind-address=0.0.0.0
 
 volumes:
   mysql_data:
