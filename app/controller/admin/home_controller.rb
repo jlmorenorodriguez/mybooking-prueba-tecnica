@@ -5,23 +5,10 @@ module Controller
       def self.registered(app)
 
         #
-        # Home page
+        # Home page - redirect to prices management
         #
         app.get '/' do
-
-          use_case = PageUseCase::Home::PageHomeUseCase.new(logger)
-          result = use_case.perform(params)
-
-          @title = "Home page"
-
-          if result.success?
-            @message = result.data
-            erb :index
-          else
-            @message = result.message
-            erb :error_page
-          end
-
+          redirect '/prices'
         end
 
       end

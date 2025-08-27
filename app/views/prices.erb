@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link href="https://cdn.datatables.net/2.3.3/css/dataTables.dataTables.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" integrity="sha512-nMNlpuaDPrqlEls3IX/Q56H36qvBASwb3ipuo3MxeWbsQB1881ox0cRv7UPTgBlriqoynt35KjEwgGUeUXIPnw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+
+    <title>Gestión de Precios</title>
+  </head>
+  <body>
+
+    <div class="content">
+      <div class="container mt-4">
+        <h1>Gestión de Precios</h1>
+        
+        <!-- Filtros -->
+        <div class="row mt-4">
+          <form class="row g-3" id="filtersForm">
+            <div class="col-md-2">
+              <label for="rental_location" class="form-label">Sucursal</label>
+              <select name="rental_location" id="rental_location" class="form-select">
+                <option value="">Seleccione una sucursal</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label for="rate_type" class="form-label">Tipo de tarifa</label>
+              <select name="rate_type" id="rate_type" class="form-select" disabled>
+                <option value="">Seleccione un tipo de tarifa</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label for="season_definition_id" class="form-label">Grupo de temporadas</label>
+              <select name="season_definition_id" id="season_definition_id" class="form-select" disabled>
+                <option value="">Tarifas sin temporadas</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label for="season_id" class="form-label">Temporada</label>
+              <select name="season_id" id="season_id" class="form-select" disabled>
+                <option value="">Seleccione la temporada</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label for="time_measurement" class="form-label">Duración</label>
+              <select name="time_measurement" id="time_measurement" class="form-select" disabled>
+                <option value="">Seleccione la unidad</option>
+                <option value="months">Meses</option>
+                <option value="days">Días</option>
+                <option value="hours">Horas</option>
+                <option value="minutes">Minutos</option>
+              </select>
+            </div>
+            <div class="col-md-1">
+              <button type="button" class="btn btn-primary w-100" style="margin-top: 32px;" id="filterBtn" disabled>Filtrar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+      
+      <hr>
+      
+      <!-- Tabla con las tarifas -->
+      <div class="container">
+        <div class="row">
+          <div class="col-12">
+            <div id="pricesTableContainer" style="display: none;">
+              <table id="prices_table" class="table table-hover">
+                <thead id="prices_table_head">
+                  <tr>
+                    <th scope="col">Categoría</th>
+                  </tr>
+                </thead>
+                <tbody id="prices_table_body">
+                </tbody>
+              </table>
+            </div>
+            <div id="noDataMessage" class="alert alert-info" style="display: none;">
+              Seleccione los filtros para mostrar las tarifas.
+            </div>
+            <div id="loadingMessage" class="alert alert-secondary" style="display: none;">
+              Cargando datos...
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Acciones -->
+      <div class="container mt-4">
+        <div class="row">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header">
+                <h5 class="card-title mb-0">Importar Precios desde CSV</h5>
+              </div>
+              <div class="card-body">
+                <form id="importForm" enctype="multipart/form-data">
+                  <div class="mb-3">
+                    <label for="csvFile" class="form-label">Seleccionar archivo CSV</label>
+                    <input type="file" class="form-control" id="csvFile" name="csv_file" accept=".csv" required>
+                    <div class="form-text">
+                      El archivo debe tener las columnas: rental_location_name, rate_type_name, season_definition_name, season_name, category_code, 1, 2, 4, 15, 30...
+                    </div>
+                  </div>
+                  <button type="submit" class="btn btn-primary">Importar Precios</button>
+                  <a href="/sample_import.csv" class="btn btn-outline-secondary">Descargar CSV de Ejemplo</a>
+                </form>
+                
+                <div id="importResults" class="mt-3" style="display: none;">
+                  <div class="alert" id="importAlert">
+                    <div id="importSummary"></div>
+                    <div id="importErrors" style="display: none;">
+                      <hr>
+                      <h6>Errores encontrados:</h6>
+                      <ul id="errorList"></ul>
+                    </div>
+                  </div>
+                </div>
+                
+                <div id="importProgress" class="mt-3" style="display: none;">
+                  <div class="progress">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%">
+                      Procesando importación...
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div> 
+      </div> 
+    </div>
+
+    <script>
+      // Wait for jQuery to be available
+      (function checkjQuery() {
+        if (typeof $ !== 'undefined') {
+          $(document).ready(function() {
+        // Initialize Select2
+        $('#rental_location').select2({ theme: 'bootstrap-5' });
+        $('#rate_type').select2({ theme: 'bootstrap-5' });
+        $('#season_definition_id').select2({ theme: 'bootstrap-5' });
+        $('#season_id').select2({ theme: 'bootstrap-5' });
+        $('#time_measurement').select2({ theme: 'bootstrap-5' });
+
+        // Load initial rental locations
+        loadRentalLocations();
+
+        // Event handlers for cascading selects
+        $('#rental_location').on('change', function() {
+          var rentalLocationId = $(this).val();
+          resetSelects(['rate_type', 'season_definition_id', 'season_id']);
+          $('#time_measurement').val('').prop('disabled', true);
+          
+          if (rentalLocationId) {
+            loadRateTypes(rentalLocationId);
+            $('#rate_type').prop('disabled', false);
+          } else {
+            disableSelects(['rate_type', 'season_definition_id', 'season_id', 'time_measurement']);
+          }
+        });
+
+        $('#rate_type').on('change', function() {
+          var rentalLocationId = $('#rental_location').val();
+          var rateTypeId = $(this).val();
+          resetSelects(['season_definition_id', 'season_id']);
+          
+          if (rentalLocationId && rateTypeId) {
+            loadSeasonDefinitions(rentalLocationId, rateTypeId);
+            $('#season_definition_id').prop('disabled', false);
+            $('#time_measurement').prop('disabled', false);
+            $('#time_measurement').val('days').trigger('change'); // Default to days
+            $('#filterBtn').prop('disabled', false);
+          } else {
+            disableSelects(['season_definition_id', 'season_id', 'time_measurement']);
+            $('#filterBtn').prop('disabled', true);
+          }
+        });
+
+        $('#season_definition_id').on('change', function() {
+          var seasonDefinitionId = $(this).val();
+          resetSelects(['season_id']);
+          
+          if (seasonDefinitionId) {
+            loadSeasons(seasonDefinitionId);
+            $('#season_id').prop('disabled', false);
+          } else {
+            $('#season_id').prop('disabled', true);
+          }
+        });
+
+        // Filter button click
+        $('#filterBtn').on('click', function() {
+          loadPricesData();
+        });
+
+        // Import form submit
+        $('#importForm').on('submit', function(e) {
+          e.preventDefault();
+          
+          var formData = new FormData();
+          var fileInput = $('#csvFile')[0];
+          
+          if (fileInput.files.length === 0) {
+            alert('Por favor selecciona un archivo CSV');
+            return;
+          }
+          
+          formData.append('csv_file', fileInput.files[0]);
+          
+          showImportProgress();
+          
+          $.ajax({
+            url: '/api/prices/import',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+              hideImportProgress();
+              showImportResults(response);
+              
+              // Refresh the current view if filters are applied
+              if ($('#filterBtn').prop('disabled') === false) {
+                loadPricesData();
+              }
+            },
+            error: function(xhr) {
+              hideImportProgress();
+              var errorMessage = 'Error durante la importación';
+              
+              if (xhr.responseJSON && xhr.responseJSON.error) {
+                errorMessage = xhr.responseJSON.error;
+              }
+              
+              showImportResults({
+                success: false,
+                processed_rows: 0,
+                created_prices: 0,
+                updated_prices: 0,
+                errors: [errorMessage]
+              });
+            }
+          });
+        });
+
+        // Functions
+        function loadRentalLocations() {
+          $.get('/api/rental-locations')
+            .done(function(data) {
+              var select = $('#rental_location');
+              select.empty().append('<option value="">Seleccione una sucursal</option>');
+              
+              $.each(data, function(index, item) {
+                select.append('<option value="' + item.id + '">' + item.name + '</option>');
+              });
+            })
+            .fail(function() {
+              alert('Error cargando sucursales');
+            });
+        }
+
+        function loadRateTypes(rentalLocationId) {
+          $.get('/api/rental-locations/' + rentalLocationId + '/rate-types')
+            .done(function(data) {
+              var select = $('#rate_type');
+              select.empty().append('<option value="">Seleccione un tipo de tarifa</option>');
+              
+              $.each(data, function(index, item) {
+                select.append('<option value="' + item.id + '">' + item.name + '</option>');
+              });
+            })
+            .fail(function() {
+              alert('Error cargando tipos de tarifa');
+            });
+        }
+
+        function loadSeasonDefinitions(rentalLocationId, rateTypeId) {
+          $.get('/api/season-definitions', {
+            rental_location_id: rentalLocationId,
+            rate_type_id: rateTypeId
+          })
+            .done(function(data) {
+              var select = $('#season_definition_id');
+              select.empty().append('<option value="">Tarifas sin temporadas</option>');
+              
+              $.each(data, function(index, item) {
+                select.append('<option value="' + item.id + '">' + item.name + '</option>');
+              });
+            })
+            .fail(function() {
+              alert('Error cargando definiciones de temporada');
+            });
+        }
+
+        function loadSeasons(seasonDefinitionId) {
+          $.get('/api/season-definitions/' + seasonDefinitionId + '/seasons')
+            .done(function(data) {
+              var select = $('#season_id');
+              select.empty().append('<option value="">Seleccione la temporada</option>');
+              
+              $.each(data, function(index, item) {
+                select.append('<option value="' + item.id + '">' + item.name + '</option>');
+              });
+            })
+            .fail(function() {
+              alert('Error cargando temporadas');
+            });
+        }
+
+        function loadPricesData() {
+          showLoadingMessage();
+          
+          var params = {
+            rental_location_id: $('#rental_location').val(),
+            rate_type_id: $('#rate_type').val(),
+            season_definition_id: $('#season_definition_id').val(),
+            season_id: $('#season_id').val(),
+            time_measurement: $('#time_measurement').val()
+          };
+
+          $.get('/api/prices', params)
+            .done(function(data) {
+              buildPricesTable(data);
+            })
+            .fail(function() {
+              hideLoadingMessage();
+              alert('Error cargando datos de precios');
+            });
+        }
+
+        function buildPricesTable(data) {
+          // Destroy existing DataTable first
+          if ($.fn.DataTable.isDataTable('#prices_table')) {
+            $('#prices_table').DataTable().destroy();
+          }
+          
+          var tableHead = $('#prices_table_head');
+          var tableBody = $('#prices_table_body');
+          
+          // Clear existing content
+          tableHead.empty();
+          tableBody.empty();
+          
+          if (!data.categories || data.categories.length === 0) {
+            showNoDataMessage();
+            return;
+          }
+
+          // Build header
+          var headerRow = '<tr><th scope="col">Categoría</th>';
+          $.each(data.durations, function(index, duration) {
+            headerRow += '<th scope="col" class="text-end">' + duration + '</th>';
+          });
+          headerRow += '</tr>';
+          tableHead.append(headerRow);
+
+          // Build body
+          $.each(data.categories, function(index, category) {
+            var row = '<tr><th scope="row">' + category.category_code + '</th>';
+            
+            $.each(data.durations, function(i, duration) {
+              var price = category.prices[duration];
+              var displayPrice = price ? parseFloat(price).toFixed(2) : '-';
+              row += '<td class="text-end">' + displayPrice + '</td>';
+            });
+            
+            row += '</tr>';
+            tableBody.append(row);
+          });
+
+          // Initialize DataTable after building content
+          $('#prices_table').DataTable({
+            paging: true,
+            searching: false,
+            info: true,
+            responsive: true,
+            destroy: true
+          });
+
+          showPricesTable();
+        }
+
+        function resetSelects(selectIds) {
+          $.each(selectIds, function(index, selectId) {
+            $('#' + selectId).empty().append('<option value="">Seleccione...</option>').val('').trigger('change');
+          });
+        }
+
+        function disableSelects(selectIds) {
+          $.each(selectIds, function(index, selectId) {
+            $('#' + selectId).prop('disabled', true);
+          });
+        }
+
+        function showPricesTable() {
+          $('#loadingMessage').hide();
+          $('#noDataMessage').hide();
+          $('#pricesTableContainer').show();
+        }
+
+        function showNoDataMessage() {
+          $('#loadingMessage').hide();
+          $('#pricesTableContainer').hide();
+          $('#noDataMessage').show();
+        }
+
+        function showLoadingMessage() {
+          $('#pricesTableContainer').hide();
+          $('#noDataMessage').hide();
+          $('#loadingMessage').show();
+        }
+
+        function hideLoadingMessage() {
+          $('#loadingMessage').hide();
+        }
+
+        function showImportProgress() {
+          $('#importResults').hide();
+          $('#importProgress').show();
+        }
+
+        function hideImportProgress() {
+          $('#importProgress').hide();
+        }
+
+        function showImportResults(result) {
+          var alertClass = result.success ? 'alert-success' : 'alert-warning';
+          var alertTitle = result.success ? 'Importación completada exitosamente' : 'Importación completada con errores';
+          
+          $('#importAlert').removeClass('alert-success alert-warning alert-danger').addClass(alertClass);
+          
+          var summaryHtml = '<h6>' + alertTitle + '</h6>';
+          summaryHtml += '<p><strong>Filas procesadas:</strong> ' + result.processed_rows + '</p>';
+          summaryHtml += '<p><strong>Precios creados:</strong> ' + result.created_prices + '</p>';
+          summaryHtml += '<p><strong>Precios actualizados:</strong> ' + result.updated_prices + '</p>';
+          
+          $('#importSummary').html(summaryHtml);
+          
+          if (result.errors && result.errors.length > 0) {
+            var errorListHtml = '';
+            $.each(result.errors, function(index, error) {
+              errorListHtml += '<li>' + error + '</li>';
+            });
+            $('#errorList').html(errorListHtml);
+            $('#importErrors').show();
+          } else {
+            $('#importErrors').hide();
+          }
+          
+          $('#importResults').show();
+          
+          // Clear the file input
+          $('#csvFile').val('');
+        }
+
+        // Initialize with no data message
+        showNoDataMessage();
+          });
+        } else {
+          setTimeout(checkjQuery, 50);
+        }
+      })();
+    </script>

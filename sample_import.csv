@@ -1,0 +1,10 @@
+rental_location_name,rate_type_name,season_definition_name,season_name,category_code,1,2,4,15,30
+Barcelona,Estándar,Temporadas scooters,Alta,A,65.00,60.00,50.00,45.00,
+Barcelona,Estándar,Temporadas scooters,Media,A,55.00,50.00,40.00,35.00,
+Barcelona,Estándar,Temporadas scooters,Baja,A,45.00,40.00,30.00,25.00,
+Barcelona,Estándar,Temporadas turismos,Alta,B,85.00,80.00,75.00,70.00,65.00
+Barcelona,Estándar,Temporadas turismos,Media-Baja,B,65.00,60.00,55.00,50.00,45.00
+Barcelona,Estándar,,,C,110.00,,,,
+Menorca,Estándar,Temporadas scooters,Alta,A,70.00,65.00,55.00,50.00,
+Menorca,Estándar,Temporadas scooters,Media,A,60.00,55.00,45.00,40.00,
+Menorca,Estándar,Temporadas scooters,Baja,A,50.00,45.00,35.00,30.00,
